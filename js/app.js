@@ -1,22 +1,54 @@
+var SHOW_BOUNDING_RADIUS = false;
+function handleDebugCheckBox (cb) {
+  SHOW_BOUNDING_RADIUS = cb.checked;
+}
 var Vec2 = function (x, y) {
   this.x = x;
   this.y = y;
 };
 
+Vec2.prototype.dist = function (o) {
+  var xd = this.x - o.x;
+  var yd = this.y - o.y;
+  return Math.sqrt(xd * xd + yd * yd);
+};
+
+// Scenario vars
+var ROW_BASE = 60;
+var ROW_HEIGHT = 83;
+
+var PLAYER_START_POSITION = function () {
+  return new Vec2(202, ROW_BASE + ROW_HEIGHT * 4)
+};
+
 function getRandomInt (min, max) {
+  // See MDN
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-
 var Actor = function (loc) {
   this.loc = loc;
+  this.boundingRadius = 35;
 };
 
 // Draw the enemy on the screen, required method for game
 Actor.prototype.render = function () {
   ctx.drawImage(Resources.get(this.sprite), this.loc.x, this.loc.y);
+
+  if (SHOW_BOUNDING_RADIUS) {
+    ctx.beginPath();
+    ctx.arc(this.loc.x + 50.1, this.loc.y + 105.5, this.boundingRadius, 0, 360);
+    ctx.strokeStyle = "#FF0000";
+    ctx.stroke();
+  }
+};
+
+Actor.prototype.checkCollission = function (otherActor) {
+  var collissionDistance =
+      this.boundingRadius + otherActor.boundingRadius;
+  return this.loc.dist(otherActor.loc) < collissionDistance;
 };
 
 // Enemies our player must avoid
@@ -61,20 +93,27 @@ Player.prototype.handleInput = function (key) {
       break;
   }
 };
-Player.prototype.update = function (dt) {
-
+Player.prototype.die = function () {
+  this.loc = PLAYER_START_POSITION();
 };
+
+Player.prototype.update = function () {
+  allEnemies.forEach(function (p1) {
+    if (this.checkCollission(p1)) {
+      this.die();
+    }
+  }, this);
+};
+
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
-var rowBase = 60;
-var rowHeight = 83;
 var allEnemies = [
-  new Enemy(new Vec2(0, rowBase)),
-  new Enemy(new Vec2(0, rowBase + rowHeight)),
-  new Enemy(new Vec2(0, rowBase + rowHeight * 2))
+  new Enemy(new Vec2(0, ROW_BASE)),
+  new Enemy(new Vec2(0, ROW_BASE + ROW_HEIGHT)),
+  new Enemy(new Vec2(0, ROW_BASE + ROW_HEIGHT * 2))
 ];
-var player = new Player(new Vec2(202, rowBase + rowHeight * 4));
+var player = new Player(PLAYER_START_POSITION());
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
