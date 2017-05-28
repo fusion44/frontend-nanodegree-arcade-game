@@ -58,10 +58,10 @@ Actor.prototype.render = function () {
   }
 };
 
-Actor.prototype.checkCollission = function (otherActor) {
-  var collissionDistance =
+Actor.prototype.checkCollision = function (otherActor) {
+  var collisionDistance =
       this.boundingRadius + otherActor.boundingRadius;
-  return this.loc.dist(otherActor.loc) < collissionDistance;
+  return this.loc.dist(otherActor.loc) < collisionDistance;
 };
 
 // Enemies our player must avoid
@@ -147,7 +147,7 @@ Player.prototype.win = function () {
  */
 Player.prototype.update = function () {
   allEnemies.forEach(function (p1) {
-    if (this.checkCollission(p1)) {
+    if (this.checkCollision(p1)) {
       this.die();
     }
   }, this);
