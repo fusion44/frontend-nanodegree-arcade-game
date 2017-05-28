@@ -13,6 +13,14 @@ Vec2.prototype.dist = function (o) {
   return Math.sqrt(xd * xd + yd * yd);
 };
 
+/**
+ * Updates the UI after certain events
+ */
+function updateUI () {
+  var scoreElem = document.getElementById('score');
+  scoreElem.textContent = player.score;
+}
+
 // Scenario vars
 var ROW_BASE = 60;
 var ROW_HEIGHT = 83;
@@ -90,6 +98,7 @@ Enemy.prototype.reset = function () {
 var Player = function (loc) {
   Actor.call(this, loc);
   this.sprite = 'images/char-boy.png';
+  this.score = 0;
 };
 Player.prototype = Object.create(Actor.prototype);
 Player.prototype.constructor = Player;
@@ -113,16 +122,38 @@ Player.prototype.handleInput = function (key) {
       break;
   }
 };
+
+/**
+ * Reset the player object and update the score
+ */
 Player.prototype.die = function () {
   this.loc = PLAYER_START_POSITION();
+  this.score--;
+  updateUI();
 };
 
+/**
+ * Reset the player object and update the score
+ */
+Player.prototype.win = function () {
+  this.loc = PLAYER_START_POSITION();
+  this.score++;
+  updateUI();
+};
+
+/**
+ * Check for collisions and update
+ * the player objects state
+ */
 Player.prototype.update = function () {
   allEnemies.forEach(function (p1) {
     if (this.checkCollission(p1)) {
       this.die();
     }
   }, this);
+  if (this.loc.y < 0) {
+    this.win();
+  }
 };
 
 // Now instantiate your objects.
