@@ -17,6 +17,11 @@ Vec2.prototype.dist = function (o) {
 var ROW_BASE = 60;
 var ROW_HEIGHT = 83;
 
+// Where enemies start upon reset
+var ENEMY_START_POS_X = -140;
+// Where enemies are reset
+var ENEMY_RESET_POS_X = 500;
+
 var PLAYER_START_POSITION = function () {
   return new Vec2(202, ROW_BASE + ROW_HEIGHT * 4)
 };
@@ -60,8 +65,23 @@ var Enemy = function (loc) {
 Enemy.prototype = Object.create(Actor.prototype);
 Enemy.prototype.constructor = Enemy;
 
+/**
+ * Updates the objects state
+ *
+ * @param dt Delta time since last update
+ */
 Enemy.prototype.update = function (dt) {
   this.loc.x += this.speed * dt;
+  if (this.loc.x > ENEMY_RESET_POS_X) {
+    this.reset()
+  }
+};
+
+/**
+ * Reset position of this object
+ */
+Enemy.prototype.reset = function () {
+  this.loc.x = ENEMY_START_POS_X;
 };
 
 // Now write your own player class
