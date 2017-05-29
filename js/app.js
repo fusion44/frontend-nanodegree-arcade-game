@@ -18,7 +18,9 @@ Vec2.prototype.dist = function (o) {
  */
 function updateUI () {
   var scoreElem = document.getElementById('score');
-  scoreElem.textContent = player.score;
+  scoreElem.textContent = 'Score: ' + player.score;
+  var starElem = document.getElementById('stars');
+  starElem.textContent = 'Stars: ' + player.stars;
 }
 
 // Scenario vars
@@ -39,6 +41,20 @@ function getRandomInt (min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min)) + min;
+}
+
+/**
+ * Resets all actors that are not the player class
+ * e.g.: Enemies and Collectibles
+ */
+function resetNonPlayerActors () {
+  allEnemies.forEach(function (enemy) {
+    enemy.reset();
+  });
+
+  allCollectibles.forEach(function (collectible) {
+    collectible.reset();
+  });
 }
 
 var Actor = function (loc) {
@@ -64,6 +80,59 @@ Actor.prototype.checkCollision = function (otherActor) {
   return this.loc.dist(otherActor.loc) < collisionDistance;
 };
 
+/**
+ * Enum to hold all available collectible types.
+ *
+ * @type {{STAR: number}}
+ */
+var COLLECTIBLES = {
+  STAR: 1
+};
+/**
+ * Collectible class. Represents actors that can be collected
+ * by the player.
+ * @param loc Locations of the collectible
+ * @param type @type of the collectible
+ * @constructor
+ */
+var Collectible = function (loc, type) {
+  Actor.call(this, loc);
+  this.type = type;
+  this.collected = false;
+  switch (type) {
+    case COLLECTIBLES.STAR:
+      this.sprite = 'images/Star.png';
+      break;
+    default:
+      console.log("No collectible type given");
+  }
+};
+Collectible.prototype = Object.create(Actor.prototype);
+Collectible.prototype.constructor = Collectible;
+/**
+ * Handles all things that should happen when this item is collected
+ */
+Collectible.prototype.collect = function () {
+  this.collected = true;
+};
+
+/**
+ * Render only if not already collected
+ */
+Collectible.prototype.render = function () {
+  if (!this.collected) {
+    Actor.prototype.render.call(this);
+  }
+};
+
+/**
+ * Reset state of this enemy
+ */
+Collectible.prototype.reset = function () {
+  this.collected = false;
+  this.loc.x = getRandomInt(0, 5) * 101;
+};
+
 // Enemies our player must avoid
 var Enemy = function (loc) {
   Actor.call(this, loc);
@@ -86,10 +155,11 @@ Enemy.prototype.update = function (dt) {
 };
 
 /**
- * Reset position of this object
+ * Reset state of this instance
  */
 Enemy.prototype.reset = function () {
   this.loc.x = ENEMY_START_POS_X;
+  this.speed = getRandomInt(90, 500);
 };
 
 // Now write your own player class
@@ -99,6 +169,7 @@ var Player = function (loc) {
   Actor.call(this, loc);
   this.sprite = 'images/char-boy.png';
   this.score = 0;
+  this.stars = 0;
 };
 Player.prototype = Object.create(Actor.prototype);
 Player.prototype.constructor = Player;
@@ -129,6 +200,8 @@ Player.prototype.handleInput = function (key) {
 Player.prototype.die = function () {
   this.loc = PLAYER_START_POSITION();
   this.score--;
+  this.stars -= 3; // Challenge++ remove 3 stars upon death
+  resetNonPlayerActors();
   updateUI();
 };
 
@@ -138,6 +211,8 @@ Player.prototype.die = function () {
 Player.prototype.win = function () {
   this.loc = PLAYER_START_POSITION();
   this.score++;
+  // this.stars = 0; Do not reset stars here. Player should be able to collect as much as he wants. At least until next reload ...
+  resetNonPlayerActors();
   updateUI();
 };
 
@@ -149,6 +224,13 @@ Player.prototype.update = function () {
   allEnemies.forEach(function (p1) {
     if (this.checkCollision(p1)) {
       this.die();
+    }
+  }, this);
+  allCollectibles.forEach(function (collectible) {
+    if (!collectible.collected && this.checkCollision(collectible)) {
+      collectible.collect();
+      this.stars++;
+      updateUI();
     }
   }, this);
   if (this.loc.y < 0) {
@@ -164,6 +246,13 @@ var allEnemies = [
   new Enemy(new Vec2(0, ROW_BASE + ROW_HEIGHT)),
   new Enemy(new Vec2(0, ROW_BASE + ROW_HEIGHT * 2))
 ];
+
+var allCollectibles = [
+  new Collectible(new Vec2(getRandomInt(0, 5) * 101, ROW_BASE), COLLECTIBLES.STAR),
+  new Collectible(new Vec2(getRandomInt(0, 5) * 101, ROW_BASE + ROW_HEIGHT), COLLECTIBLES.STAR),
+  new Collectible(new Vec2(getRandomInt(0, 5) * 101, ROW_BASE + ROW_HEIGHT * 2), COLLECTIBLES.STAR)
+];
+
 var player = new Player(PLAYER_START_POSITION());
 
 // This listens for key presses and sends the keys to your
